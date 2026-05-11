@@ -158,7 +158,6 @@ impl<OrderKind, K: AuthKind> OrderBuilder<OrderKind, K> {
     ) -> Result<OrderPayload> {
         let version = self.client.resolve_version(false).await?;
         let maker = self.funder.unwrap_or(self.signer);
-
         match version {
             1 => {
                 if matches!(self.signature_type, SignatureType::Poly1271) {
@@ -190,11 +189,16 @@ impl<OrderKind, K: AuthKind> OrderBuilder<OrderKind, K> {
                     .duration_since(UNIX_EPOCH)
                     .expect("time went backwards")
                     .as_millis();
+                let signer: Address = if self.signature_type == SignatureType::Poly1271 {
+                    maker.clone()
+                } else {
+                    self.signer.clone()
+                };
                 Ok(OrderPayload::new(
                     OrderV2 {
                         salt: U256::from(salt),
                         maker,
-                        signer: self.signer,
+                        signer: signer,
                         tokenId: token_id,
                         makerAmount: U256::from(maker_amount),
                         takerAmount: U256::from(taker_amount),
