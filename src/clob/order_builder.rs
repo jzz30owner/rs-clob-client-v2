@@ -194,7 +194,7 @@ impl<OrderKind, K: AuthKind> OrderBuilder<OrderKind, K> {
                     OrderV2 {
                         salt: U256::from(salt),
                         maker,
-                        signer: maker,
+                        signer: self.signer,
                         tokenId: token_id,
                         makerAmount: U256::from(maker_amount),
                         takerAmount: U256::from(taker_amount),
