@@ -675,6 +675,50 @@ mod limit {
     }
 
     #[tokio::test]
+    async fn should_fail_on_off_grid_price() -> anyhow::Result<()> {
+        let server = MockServer::start();
+        let client = create_authenticated(&server).await?;
+
+        ensure_requirements(&server, token_1(), TickSize::HalfCent);
+
+        let err = client
+            .limit_order()
+            .token_id(token_1())
+            .price(dec!(0.051))
+            .size(dec!(21.04))
+            .side(Side::Buy)
+            .build()
+            .await
+            .unwrap_err();
+        let msg = &err.downcast_ref::<Validation>().unwrap().reason;
+
+        assert_eq!(
+            msg,
+            "Price 0.051 is not aligned to the minimum tick size 0.005"
+        );
+
+        ensure_requirements(&server, token_2(), TickSize::QuarterCent);
+
+        let err = client
+            .limit_order()
+            .token_id(token_2())
+            .price(dec!(0.0526))
+            .size(dec!(21.04))
+            .side(Side::Buy)
+            .build()
+            .await
+            .unwrap_err();
+        let msg = &err.downcast_ref::<Validation>().unwrap().reason;
+
+        assert_eq!(
+            msg,
+            "Price 0.0526 is not aligned to the minimum tick size 0.0025"
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn should_fail_on_negative_price_and_size() -> anyhow::Result<()> {
         let server = MockServer::start();
         let client = create_authenticated(&server).await?;
